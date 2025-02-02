@@ -1,7 +1,6 @@
 # TODO:
 # Gameover screen when the player collides into a monster.
-# Game Clear screen when the time runs out
-# Update the coin count when player collides into a coin.
+# Add option to replay game after clearing.
 
 import pygame as pg
 from random import randint
@@ -15,8 +14,10 @@ class RainingCoins:
 
     def initialize_game(self):
         pg.init()
-        pg.display.set_caption("Raining Coins")
+        pg.display.set_caption("RainingCoins")
         self.game_font = pg.font.SysFont("Arial", 24)
+        self.game_clear = False
+        self.game_over = False
         self.width = 640
         self.height = 480
         self.screen = pg.display.set_mode((self.width, self.height))
@@ -45,7 +46,7 @@ class RainingCoins:
             self.draw_screen()
         while test:
             self.check_events()
-            self.draw_screen_test()
+            self.__draw_screen_test()
 
     def check_events(self):
         for event in pg.event.get():
@@ -60,22 +61,17 @@ class RainingCoins:
 
     def draw_screen(self):
         self.screen.fill((40,40,40))
-        self.__draw_ui()
         self.robot.draw()
         
         self.coin.draw()
         self.monster.draw()
+        self.__draw_ui()
 
         self.clock.tick(60)
         pg.display.flip()   
 
     def __draw_ui(self):
-        current_ticks = pg.time.get_ticks()
-        elapsed_seconds = (current_ticks - self.start_ticks) // 1000
-        time_remaining = self.timer - timedelta(seconds = elapsed_seconds)
-
-        total_seconds = int(time_remaining.total_seconds())
-        minutes, seconds = divmod(total_seconds, 60)
+        minutes, seconds = self.__calculate_time_remaining()
 
         game_text = self.game_font.render(f"{minutes}:{seconds:02}", True, (255, 0, 0))
         self.screen.blit(game_text, (580, 440))
@@ -92,15 +88,54 @@ class RainingCoins:
         self.screen.blit(self.monster_icon, (400, 435))
         self.screen.blit(game_text, (430, 440))
 
-    def draw_screen_test(self):
+    def __calculate_time_remaining(self):
+        current_ticks = pg.time.get_ticks()
+        elapsed_seconds = (current_ticks - self.start_ticks) // 1000
+        time_remaining = self.timer - timedelta(seconds = elapsed_seconds)
+
+        total_seconds = int(time_remaining.total_seconds())
+
+        if total_seconds <= 0:
+            self.__draw_game_clear()
+            return (0, 0)
+
+        return divmod(total_seconds, 60)
+
+    def __draw_game_clear(self):
+        clear_font = pg.font.SysFont("Arial", 69)
+        game_text = clear_font.render(f"You win!", True, (255, 0, 0))
+
+        center_x = self.width / 2 - game_text.get_size()[0] / 2
+        center_y = self.height / 2 - game_text.get_size()[1] / 2
+
+        self.screen.blit(game_text, (center_x, center_y))
+        self.game_clear = True
+
+    def __draw_screen_test(self):
         self.screen.fill((40, 40, 40))
         self.__draw_ui()
         self.screen.blit(self.monster_icon, (400, 435))
         pg.display.flip()
 
-class Robot:
-    def __init__(self, game_instance: RainingCoins, robot: pg.image):
+class DrawObject:
+    def __init__(self, game_instance: RainingCoins):
         self.game_instance = game_instance
+
+    def draw(self):
+        self.render_object()
+        if self.game_instance.game_clear:
+            return
+        self.update_object_xy()
+
+    def render_object(self):
+        pass
+
+    def update_object_xy(self):
+        pass
+
+class Robot(DrawObject):
+    def __init__(self, game_instance: RainingCoins, robot: pg.image):
+        super().__init__(game_instance)
         self.robot = robot
         self.speed = 5
         self.controls = []
@@ -112,16 +147,17 @@ class Robot:
         self.robot_x = 0
         self.robot_y = 430 - self.robot.get_height()
 
-    def draw(self):
+    def render_object(self):
+        self.game_instance.screen.blit(self.robot, (self.robot_x, self.robot_y))        
+
+    def update_object_xy(self):
         for key in self.controls:
             if key[0] in self.key_pressed:
                 self.robot_x += key[1]
                 self.robot_y += key[2]
-     
-        self.game_instance.screen.blit(self.robot, (self.robot_x, self.robot_y))
 
         self.robot_x = min(self.robot_x, self.game_instance.width - self.robot.get_width())
-        self.robot_x = max(self.robot_x, 0)
+        self.robot_x = max(self.robot_x, 0)        
 
     def get_coordinates(self):
         return (self.robot_x, self.robot_y)
@@ -129,9 +165,9 @@ class Robot:
     def get_width(self):
         return self.robot.get_width()
 
-class RainingItem:
+class RainingItem(DrawObject):
     def __init__(self, game_instance: RainingCoins, image: pg.image):
-        self.game_instance = game_instance
+        super().__init__(game_instance)
         self._image = image
         self._count = 0
         self._frequency = 20
@@ -141,19 +177,20 @@ class RainingItem:
     def start_positions(self):
         return [[-9001, self.game_instance.height] for i in range(self._frequency)]
 
-    def draw(self):
+    def render_object(self):
+        for i in range(self._frequency):
+            self.game_instance.screen.blit(self._image, (self._positions[i][0], self._positions[i][1]))        
+
+    def update_object_xy(self):
         for i in range(self._frequency):
             current_item = self._positions[i]
             if self.detect_collision(self.game_instance.robot, i):
                 self.collide_condition(i)
             self.monster_count(i)
-            if current_item[1] < self.floor():
+            if current_item[1] < 430 - self.image_height():
                 current_item[1] += self._speed
             else:
                 self.floor_boundary(current_item, i)
-
-        for i in range(self._frequency):
-            self.game_instance.screen.blit(self._image, (self._positions[i][0], self._positions[i][1]))
 
     def randomize_pos(self):
         return [randint(0, self.game_instance.width - self.image_width()), -randint(100, 1000)]
@@ -171,8 +208,6 @@ class RainingItem:
         pass
 
     # Hook Method
-    # Monsters disappear
-    # Coins stay on the floor
     def floor_boundary(self, current_item: list[int], index: int):
         pass
 
@@ -209,19 +244,14 @@ class Coin(RainingItem):
     def start_positions(self):
         return [self.randomize_pos() for i in range(self._frequency)]
 
-    def floor(self):
-        return 430 - self.image_height()
-
     def collide_condition(self, i: int):
-        pass
+        self._positions[i][0], self._positions[i][1] = self.randomize_pos()
+        self._count += 1
 
 class Monster(RainingItem):
     def __init__(self, game_instance: RainingCoins, monster: pg.image):
         super().__init__(game_instance, monster)
         self.visited = [False] * self._frequency
-
-    def floor(self):
-        return self.game_instance.height
 
     def collide_condition(self, i: int):
         sys.exit()
