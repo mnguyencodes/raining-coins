@@ -15,15 +15,15 @@ class RainingCoins:
     def __initialize_game(self):
         pg.init()
         pg.display.set_caption("RainingCoins")
-        self.__game_font = pg.font.SysFont("Arial", 24)
+        self.__ui = UI(self)
         self.__state = GameState()
         self.__screen = Screen()
         self.__time = Time(self)
         self.__clock = pg.time.Clock()
 
     @property
-    def game_font(self):
-        return self.__game_font
+    def ui(self):
+        return self.__ui
 
     @property
     def state(self):
@@ -43,13 +43,9 @@ class RainingCoins:
 
         coin = pg.image.load("coin.png")
         self.__coin = Coin(self, coin)
-        new_size = (coin.get_size()[0] // 2, coin.get_size()[1] // 2)
-        self.__coin_icon = pg.transform.scale(coin, new_size)
 
         monster = pg.image.load("monster.png")
         self.__monster = Monster(self, monster)
-        new_size = (monster.get_size()[0] // 2, monster.get_size()[1] // 2)
-        self.__monster_icon = pg.transform.scale(monster, new_size)
 
     @property
     def robot(self):
@@ -89,49 +85,15 @@ class RainingCoins:
         
         self.__coin.draw()
         self.__monster.draw()
-        self.__draw_ui()
+        self.__ui.draw_ui()
 
         self.__clock.tick(60)
         pg.display.flip()   
 
-    def __draw_ui(self):
-        self.__time.draw_time()
-
-        if self.__is_game_clear():
-            self.__draw_game_clear()
-
-        self.draw_text("Esc = exit game", 20, 440)
-        pg.draw.line(self.__screen.screen, (255, 0, 0), (0, 430), (self.__screen.width, 430), 3)
-
-        self.draw_text(f"x{self.__coin.count}", 520, 440)
-        self.__screen.render_screen(self.__coin_icon, 490, 445)
-
-        self.draw_text(f"x{self.__monster.count}", 430, 440)
-        self.__screen.render_screen(self.__monster_icon, 400, 435)
-
-    def draw_text(self, hud: str, x: int, y: int):
-        self.__screen.render_screen(self.__game_text(hud, self.__game_font), x, y)
-
-    def __game_text(self, hud: str, font: pg.font):
-        return font.render(hud, True, (255, 0, 0))
-
-    def __draw_game_clear(self):
-        clear_font = pg.font.SysFont("Arial", 69)
-        win_text = self.__game_text("You win!", clear_font)
-
-        center_x = self.__screen.width / 2 - win_text.get_size()[0] / 2
-        center_y = self.__screen.height / 2 - win_text.get_size()[1] / 2
-
-        self.__screen.render_screen(win_text, center_x, center_y)
-        self.__state.game_clear = True
-
-    def __is_game_clear(self):
-        return self.__time.is_time_up()
-
     def __draw_screen_test(self):
         self.__screen.clear_screen()
-        self.__draw_ui()
-        self.__screen.render_screen(self.__monster_icon, 400, 435)
+        self.__ui.draw_ui()
+        self.__screen.render_screen()
         pg.display.flip()
 
 class Screen:
@@ -158,19 +120,60 @@ class Screen:
     def render_screen(self, image: pg.image, x: int, y: int):
         self.__screen.blit(image, (x, y))
 
+class UI:
+    def __init__(self, game_instance: RainingCoins):
+        self.__game_instance = game_instance
+        self.__game_font = pg.font.SysFont("Arial", 24)
+
+    def draw_ui(self):
+        self.__game_instance.time.draw_time()
+
+        if self.__game_instance.state.is_game_clear():
+            self.__game_instance.ui.draw_game_clear()
+
+        self.draw_text("Esc = exit game", 20, 440)
+        pg.draw.line(self.__game_instance.screen.screen, (255, 0, 0), (0, 430), (self.__game_instance.screen.width, 430), 3)
+
+        self.draw_text(f"x{self.__game_instance.coin.count}", 520, 440)
+        self.__game_instance.screen.render_screen(self.draw_icon(self.__game_instance.coin.image), 490, 445)
+
+        self.draw_text(f"x{self.__game_instance.monster.count}", 430, 440)
+        self.__game_instance.screen.render_screen(self.draw_icon(self.__game_instance.monster.image), 400, 435)
+        
+    def draw_game_clear(self):
+        clear_font = pg.font.SysFont("Arial", 69)
+        win_text = self.__game_text("You win!", clear_font)
+
+        center_x = self.__game_instance.screen.width / 2 - win_text.get_size()[0] / 2
+        center_y = self.__game_instance.screen.height / 2 - win_text.get_size()[1] / 2
+
+        self.__game_instance.screen.render_screen(win_text, center_x, center_y)
+
+    def draw_game_over(self):
+        pass
+
+    def draw_text(self, hud: str, x: int, y: int):
+        self.__game_instance.screen.render_screen(self.__game_text(hud, self.__game_font), x, y)
+
+    def draw_icon(self, image: pg.image):
+        return pg.transform.scale(image, (image.get_size()[0] // 2, image.get_size()[1] // 2))
+
+    def __game_text(self, hud: str, font: pg.font):
+        return font.render(hud, True, (255, 0, 0))
+
 class Time:
     def __init__(self, game_instance: RainingCoins):
         self.__game_instance = game_instance
         self.__timer = timedelta(minutes = 2)
         self.__start_ticks = pg.time.get_ticks() # measured in milliseconds 
-        self.__time_up = False        
+        self.__time_up = False
 
     def is_time_up(self):
         return self.__time_up
 
     def draw_time(self):
         minutes, seconds = self.__calculate_time_remaining()
-        self.__game_instance.draw_text(f"{minutes}:{seconds:02}", 580, 440)
+        self.__game_instance.ui.draw_text(f"{minutes}:{seconds:02}", 580, 440)
 
     def __calculate_time_remaining(self):
         current_ticks = pg.time.get_ticks()
@@ -181,7 +184,7 @@ class Time:
 
         if total_seconds <= 0:
             self.__time_up = True
-            self.__game_instance.state.game_clear()            
+            self.__game_instance.state.game_clear()
             return (0, 0)
 
         return divmod(total_seconds, 60)
@@ -264,6 +267,20 @@ class RainingItem(DrawObject):
         self._speed = 2
         self._positions = self._start_positions()
 
+    @property
+    def count(self):
+        return self._count
+    
+    @property
+    def image(self):
+        return self._image
+
+    def set_frequency(self, frequency: int):
+        self._frequency = frequency
+    
+    def set_speed(self, speed: int):
+        self._speed = speed
+
     def _start_positions(self):
         return [[-9001, self._game_instance.screen.height] for i in range(self._frequency)]
 
@@ -312,16 +329,6 @@ class RainingItem(DrawObject):
     
     def image_width(self):
         return self._image.get_width()
-    
-    @property
-    def count(self):
-        return self._count
-
-    def set_frequency(self, frequency: int):
-        self._frequency = frequency
-    
-    def set_speed(self, speed: int):
-        self._speed = speed
 
 class Coin(RainingItem):
     def __init__(self, game_instance: RainingCoins, coin: pg.image):
