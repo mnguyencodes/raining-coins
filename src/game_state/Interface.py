@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-
 import pygame as pg
 
 if TYPE_CHECKING:
@@ -38,9 +37,9 @@ class UI:
         self.__game_instance.time.draw_time()
 
         if self.__game_instance.state.is_game_clear():
-            self.__game_instance.ui.draw_game_clear()
+            self.__game_instance.ui.draw_game_state("You win!")
         elif self.__game_instance.state.is_game_over():
-            self.__game_instance.ui.draw_game_over()
+            self.__game_instance.ui.draw_game_state("GAME OVER")
 
         self.draw_text("Esc = exit game", 20, 440)
         pg.draw.line(self.__game_instance.screen.screen, (255, 0, 0), (0, 430), (self.__game_instance.screen.width, 430), 3)
@@ -51,23 +50,14 @@ class UI:
         self.draw_text(f"x{self.__game_instance.monster.count}", 430, 440)
         self.__game_instance.screen.render_screen(self.draw_icon(self.__game_instance.monster.image), 400, 435)
         
-    def draw_game_clear(self):
-        clear_font = pg.font.SysFont("Arial", 69)
-        win_text = self.__game_text("You win!", clear_font)
+    def draw_game_state(self, state: str):
+        state_font = pg.font.SysFont("Arial", 69)
+        text = self.__game_text(f"{state}", state_font)
 
-        center_x = self.__game_instance.screen.width / 2 - win_text.get_size()[0] / 2
-        center_y = self.__game_instance.screen.height / 2 - win_text.get_size()[1] / 2
+        center_x = self.__game_instance.screen.width / 2 - text.get_size()[0] / 2
+        center_y = self.__game_instance.screen.height / 2 - text.get_size()[1] / 2
 
-        self.__game_instance.screen.render_screen(win_text, center_x, center_y)
-
-    def draw_game_over(self):
-        clear_font = pg.font.SysFont("Arial", 69)
-        win_text = self.__game_text("GAME OVER!", clear_font)
-
-        center_x = self.__game_instance.screen.width / 2 - win_text.get_size()[0] / 2
-        center_y = self.__game_instance.screen.height / 2 - win_text.get_size()[1] / 2
-
-        self.__game_instance.screen.render_screen(win_text, center_x, center_y)
+        self.__game_instance.screen.render_screen(text, center_x, center_y)
 
     def draw_text(self, hud: str, x: int, y: int):
         self.__game_instance.screen.render_screen(self.__game_text(hud, self.__game_font), x, y)
