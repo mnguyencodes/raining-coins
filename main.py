@@ -16,8 +16,7 @@ class RainingCoins:
         pg.init()
         pg.display.set_caption("RainingCoins")
         self.__game_font = pg.font.SysFont("Arial", 24)
-        self.__game_clear = False
-        self.__game_over = False
+        self.__state = GameState()
         self.__screen = Screen()
         self.__time = Time(self)
         self.__clock = pg.time.Clock()
@@ -27,12 +26,8 @@ class RainingCoins:
         return self.__game_font
 
     @property
-    def game_clear(self):
-        return self.__game_clear
-    
-    @property
-    def game_over(self):
-        return self.__game_over
+    def state(self):
+        return self.__state
 
     @property
     def screen(self):
@@ -128,7 +123,7 @@ class RainingCoins:
         center_y = self.__screen.height / 2 - win_text.get_size()[1] / 2
 
         self.__screen.render_screen(win_text, center_x, center_y)
-        self.__game_clear = True
+        self.__state.game_clear = True
 
     def __is_game_clear(self):
         return self.__time.is_time_up()
@@ -186,9 +181,27 @@ class Time:
 
         if total_seconds <= 0:
             self.__time_up = True
+            self.__game_instance.state.game_clear()            
             return (0, 0)
 
         return divmod(total_seconds, 60)
+
+class GameState:
+    def __init__(self):
+        self.__game_clear = False
+        self.__game_over = False
+
+    def game_clear(self):
+        self.__game_clear = True
+
+    def game_over(self):
+        self.__game_over = True
+
+    def is_game_clear(self):
+        return self.__game_clear
+    
+    def is_game_over(self):
+        return self.__game_over
 
 class DrawObject:
     def __init__(self, game_instance: RainingCoins):
