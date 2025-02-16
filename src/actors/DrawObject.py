@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from random import randint
 
 if TYPE_CHECKING:
-    from main import RainingCoins, Robot, pg
+    from game_state.GameController import RainingCoins, Robot, pg
 
 class DrawObject:
     def __init__(self, game_instance: "RainingCoins"):

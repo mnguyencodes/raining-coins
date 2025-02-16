@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from actors.DrawObject import RainingItem
 
 if TYPE_CHECKING:
-    from main import RainingCoins, pg
+    from game_state.GameController import RainingCoins, pg
 
 class Coin(RainingItem):
     def __init__(self, game_instance: "RainingCoins", coin: "pg.image"):

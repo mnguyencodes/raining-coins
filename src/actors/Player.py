@@ -3,7 +3,7 @@ from actors.DrawObject import DrawObject
 import pygame as pg
 
 if TYPE_CHECKING:
-    from main import RainingCoins
+    from game_state.GameController import RainingCoins
 
 class Robot(DrawObject):
     def __init__(self, game_instance: "RainingCoins", robot: pg.image):

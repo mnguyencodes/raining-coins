@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 import pygame as pg
 
 if TYPE_CHECKING:
-    from main import RainingCoins
+    from game_state.GameController import RainingCoins
 
 class Screen:
     def __init__(self):
