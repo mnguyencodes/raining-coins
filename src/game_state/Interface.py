@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING
+
 import pygame as pg
+
+if TYPE_CHECKING:
+    from main import RainingCoins
 
 class Screen:
     def __init__(self):
@@ -25,8 +30,7 @@ class Screen:
         self.__screen.blit(image, (x, y))
 
 class UI:
-    # def __init__(self, game_instance: RainingCoins):
-    def __init__(self, game_instance):
+    def __init__(self, game_instance: "RainingCoins"):
         self.__game_instance = game_instance
         self.__game_font = pg.font.SysFont("Arial", 24)
 
