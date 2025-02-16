@@ -41,10 +41,10 @@ class RainingCoins:
         robot = pg.image.load(f"{ASSETS_DIR}\\robot.png")
         self.__robot = Robot(self, robot)
 
-        coin = pg.image.load(f"{ASSETS_DIR}\coin.png")
+        coin = pg.image.load(f"{ASSETS_DIR}\\coin.png")
         self.__coin = Coin(self, coin)
 
-        monster = pg.image.load(f"{ASSETS_DIR}\monster.png")
+        monster = pg.image.load(f"{ASSETS_DIR}\\monster.png")
         self.__monster = Monster(self, monster)
 
     @property
