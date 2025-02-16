@@ -16,7 +16,7 @@ class RainingCoins:
         pg.init()
         pg.display.set_caption("RainingCoins")
         self.__ui = UI(self)
-        self.__state = GameState()
+        self.__state = GameState(self)
         self.__screen = Screen()
         self.__time = Time(self)
         self.__clock = pg.time.Clock()
@@ -130,6 +130,8 @@ class UI:
 
         if self.__game_instance.state.is_game_clear():
             self.__game_instance.ui.draw_game_clear()
+        elif self.__game_instance.state.is_game_over():
+            self.__game_instance.ui.draw_game_over()
 
         self.draw_text("Esc = exit game", 20, 440)
         pg.draw.line(self.__game_instance.screen.screen, (255, 0, 0), (0, 430), (self.__game_instance.screen.width, 430), 3)
@@ -150,7 +152,13 @@ class UI:
         self.__game_instance.screen.render_screen(win_text, center_x, center_y)
 
     def draw_game_over(self):
-        pass
+        clear_font = pg.font.SysFont("Arial", 69)
+        win_text = self.__game_text("GAME OVER!", clear_font)
+
+        center_x = self.__game_instance.screen.width / 2 - win_text.get_size()[0] / 2
+        center_y = self.__game_instance.screen.height / 2 - win_text.get_size()[1] / 2
+
+        self.__game_instance.screen.render_screen(win_text, center_x, center_y)
 
     def draw_text(self, hud: str, x: int, y: int):
         self.__game_instance.screen.render_screen(self.__game_text(hud, self.__game_font), x, y)
@@ -175,22 +183,30 @@ class Time:
         minutes, seconds = self.__calculate_time_remaining()
         self.__game_instance.ui.draw_text(f"{minutes}:{seconds:02}", 580, 440)
 
+    def get_time_ticks(self):
+        return pg.time.get_ticks()
+
     def __calculate_time_remaining(self):
-        current_ticks = pg.time.get_ticks()
+        current_ticks = (pg.time.get_ticks()
+            if not self.__game_instance.state.is_game_over() 
+            else self.__game_instance.state.get_end_time())
+        
         elapsed_seconds = (current_ticks - self.__start_ticks) // 1000
         time_remaining = self.__timer - timedelta(seconds = elapsed_seconds)
-
         total_seconds = int(time_remaining.total_seconds())
+        minutes, seconds = divmod(total_seconds, 60)
 
         if total_seconds <= 0:
             self.__time_up = True
             self.__game_instance.state.game_clear()
             return (0, 0)
 
-        return divmod(total_seconds, 60)
+        return (minutes, seconds)
+        # return divmod(total_seconds, 60)
 
 class GameState:
-    def __init__(self):
+    def __init__(self, game_instance: RainingCoins):
+        self.__game_instance = game_instance
         self.__game_clear = False
         self.__game_over = False
 
@@ -199,6 +215,10 @@ class GameState:
 
     def game_over(self):
         self.__game_over = True
+        self.__end_time = self.__game_instance.time.get_time_ticks()        
+
+    def get_end_time(self):
+        return self.__end_time
 
     def is_game_clear(self):
         return self.__game_clear
@@ -212,7 +232,7 @@ class DrawObject:
 
     def draw(self):
         self._render_object()
-        if self._game_instance.time.is_time_up():
+        if self._game_instance.time.is_time_up() or self._game_instance.state.is_game_over():
             return
         self._update_object_xy()
 
@@ -347,7 +367,7 @@ class Monster(RainingItem):
         self.__visited = [False] * self._frequency
 
     def _collide_condition(self, i: int):
-        sys.exit()
+        self._game_instance.state.game_over()
 
     def _monster_count(self, i: int):
         if (not self.__visited[i] and self._positions[i][1] >= 0 and \
