@@ -69,11 +69,14 @@ class RainingCoins:
             self.__check_events()
             self.__draw_screen_test()
 
+    def exit_game(self):
+        sys.exit()
+
     def __check_events(self):
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
-                    sys.exit()
+                    self.exit_game()
                 self.__robot.key_pressed[event.key] = True
             if event.type == pg.KEYUP:
                 del self.__robot.key_pressed[event.key]
@@ -203,7 +206,6 @@ class Time:
             return (0, 0)
 
         return (minutes, seconds)
-        # return divmod(total_seconds, 60)
 
 class GameState:
     def __init__(self, game_instance: RainingCoins):
