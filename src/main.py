@@ -1,11 +1,11 @@
 # TODO:
-# Gameover screen when the player collides into a monster.
 # Add option to replay game after clearing.
 
 import pygame as pg
+import sys
+import path_utils as pu
 from random import randint
 from datetime import timedelta
-import sys
 
 class RainingCoins:
     def __init__(self):
@@ -38,13 +38,14 @@ class RainingCoins:
         return self.__time
 
     def __initialize_assets(self):
-        robot = pg.image.load("robot.png")
+        ASSETS_DIR = pu.os.path.join(pu.get_parent_dir(pu.root_dir()), "assets")        
+        robot = pg.image.load(f"{ASSETS_DIR}\\robot.png")
         self.__robot = Robot(self, robot)
 
-        coin = pg.image.load("coin.png")
+        coin = pg.image.load(f"{ASSETS_DIR}\coin.png")
         self.__coin = Coin(self, coin)
 
-        monster = pg.image.load("monster.png")
+        monster = pg.image.load(f"{ASSETS_DIR}\monster.png")
         self.__monster = Monster(self, monster)
 
     @property
